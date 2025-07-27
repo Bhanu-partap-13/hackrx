@@ -1,0 +1,12 @@
+# Virtual environments
+.venv/
+hackrx_env/
+venv/
+
+# Sensitive config
+.env
+*.env
+
+# Other Python ignores (for completeness)
+__pycache__/
+*.pyc
