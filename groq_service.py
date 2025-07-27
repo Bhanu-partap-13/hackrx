@@ -1,29 +1,22 @@
-import os
 from groq import Groq
-from typing import List, Dict
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class GroqService:
-    def __init__(self, model: str = "llama3-8b-8192"):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = model
-
-    def answer(self, question: str, contexts: List[Dict]) -> str:
-        context_text = ""
-        for i, c in enumerate(contexts, 1):
-            context_text += f"[Context {i}]: {c['content']}\n"
+    def __init__(self, api_key: str):
+        self.client = Groq(api_key=api_key)
+    
+    def generate_answer(self, question: str, context: str) -> str:
         prompt = (
-            "You are an expert document analyst. Answer based only on the contexts.\n\n"
-            f"Contexts:\n{context_text}\n"
-            f"Question: {question}\n\n"
-            "Answer with specific details and cite context indices."
+            "You are an insurance policy analyst. Answer ONLY based on the context.\n\n"
+            f"Context:\n{context}\n\nQuestion: {question}\n"
+            "If info is missing, say 'Not specified in the provided context'."
         )
-        resp = self.client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model=self.model,
-            temperature=0.1,
-            max_tokens=300
-        )
-        return resp.choices[0].message.content.strip()
+        try:
+            response = self.client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama3-8b-8192",
+                temperature=0.1,
+                max_tokens=300
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            return f"Error generating answer: {str(e)}"
