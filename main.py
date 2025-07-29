@@ -45,37 +45,49 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     answers: List[str]
 
-# API endpoint matching spec with security dependency
+# In main.py
+
 @app.post("/api/v1/hackrx/run", response_model=QueryResponse)
 async def hackrx_run(request: QueryRequest, token: str = Depends(verify_token)):
+    print("\n--- Request received. Entering hackrx_run function. ---")
     try:
         # Step 1: Download and parse PDF text
+        print("Step 1: Attempting to download and parse PDF...")
         raw_text = doc_processor.download_and_parse_pdf(request.documents)
+        print("--- PDF processed successfully. ---")
 
         if not raw_text:
             raise HTTPException(status_code=400, detail="Failed to extract text from document")
 
         # Step 2: Clean and chunk text
+        print("Step 2: Cleaning and chunking text...")
         chunks = doc_processor.clean_and_chunk_text(raw_text)
+        print("--- Text chunked successfully. ---")
         if not chunks:
             raise HTTPException(status_code=400, detail="Document could not be chunked")
 
         # Step 3: Create vector index
+        print("Step 3: Creating vector index... (This may take a moment)")
         index = vector_store.create_index(chunks)
+        print("--- Vector index created successfully. ---")
 
         # Step 4: For each question, retrieve relevant chunks and generate answer
+        print("Step 4: Starting to generate answers for questions...")
         answers = []
         for question in request.questions:
+            print(f"--- Processing question: '{question[:30]}...'")
             context = vector_store.search_relevant_chunks(question, index, chunks, top_k=4)
             answer = groq_service.generate_answer(question, context)
             answers.append(answer)
 
+        print("--- All answers generated. Returning response. ---")
         return QueryResponse(answers=answers)
 
     except Exception as e:
-        # For debugging, optionally replace with logging
+        # This will now print the error to your terminal before returning 500
+        print(f"\n!!!!!! AN ERROR OCCURRED !!!!!!\n{e}\n")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
+    
 # Optional: Add a root GET endpoint to confirm service is running
 @app.get("/")
 async def root():
