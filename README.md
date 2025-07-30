@@ -1,77 +1,225 @@
-# HackRx 6.0 - LLM-Powered Intelligent Query-Retrieval System
+# HackRx 6.0 - Intelligent Document Retrieval System
 
-This project is a Retrieval-Augmented Generation (RAG) system built for HackRx 6.0. It processes insurance policy PDFs from a given URL, chunks and embeds the text using Sentence Transformers and FAISS for efficient retrieval, and generates precise, explainable answers using the Groq API. The system adheres to the specified API format with a base URL of `/api/v1`, Bearer token authentication, and JSON input/output for documents and questions.
+Welcome to the **HackRx 6.0** AI-powered document retrieval system! This repository provides a FastAPI-based API for extracting answers from large PDF documents using text chunking, semantic search with sentence transformers, and LLM-powered answer generation via Groq.
 
-## Key Features
-- **API Endpoint**: POST `/api/v1/hackrx/run` – Accepts a document URL and list of questions, returns an array of answers.
-- **Authentication**: Requires `Authorization: Bearer 80952cdfb4fc8cfff557b6cb27c4c39b9c980c039093b1ec6047ebedba90a9d7`.
-- **Modular Architecture**: Separate modules for document processing, vector storage, and Groq integration.
-- **Efficiency**: Optimized chunking, embedding, and retrieval for low latency.
-- **Explainability**: Answers cite specific clauses/periods from the context where possible.
+---
 
-## Tech Stack
-- FastAPI for the API server.
-- Sentence Transformers and FAISS for embedding and vector search.
-- Groq API for LLM generation (using Llama3 model).
-- PyPDF2 for PDF parsing.
-- Python-dotenv for environment management.
+## Table of Contents
 
-## Requirements
-- Python 3.8+ (tested on 3.11).
-- Dependencies: Listed in `requirements.txt` (e.g., fastapi, uvicorn, sentence-transformers, faiss-cpu, groq, PyPDF2, requests, python-dotenv).
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Setup & Installation](#setup--installation)
+- [Environment Configuration](#environment-configuration)
+- [Running Locally](#running-locally)
+- [Exposing Your API via Ngrok](#exposing-your-api-via-ngrok)
+- [Testing the API](#testing-the-api)
+- [HackRx Submission Guidelines](#hackrx-submission-guidelines)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [References](#references)
+- [License](#license)
 
-## Setup Instructions
-1. **Clone or Unzip the Project**:
-   - Extract the ZIP to a folder (e.g., `hackrx-project`).
+---
 
-2. **Create and Activate Virtual Environment**:
-    - python -m venv hackrx_env
-    - hackrx_env\Scripts\activate # On Windows (use source on Linux/Mac)
+## Features
 
-3. **Install Dependencies**:
-    - pip install -r requirements.txt
+- Download and parse large PDF documents from URLs.
+- Clean and chunk text with semantic-aware sentence splitting.
+- Produce vector embeddings with fast SentenceTransformers models.
+- Perform efficient semantic search using FAISS index.
+- Generate concise, accurate answers using Groq LLM API with prompt engineering.
+- Async concurrency and caching for fast performance.
+- Secure API with Bearer token authentication.
 
+---
 
-4. **Configure Environment Variables**:
-- Copy `.env.template` to `.env`.
-- Add your Groq API key: `GROQ_API_KEY=your_groq_api_key_here` (obtain from Groq dashboard).
+## Prerequisites
 
-## How to Run the Files
-### Starting the FastAPI Server
-- In the project directory, run:
+- Python 3.9+ (3.10+ recommended)
+- pip package manager
+- (Optional) CUDA-enabled GPU to accelerate embeddings
+- Ngrok (optional, to expose local server publicly)
+- Groq API key (provided by HackRx)
 
-- uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-- The server will start and log: `Uvicorn running on http://127.0.0.1:8000`.
-- Access interactive Swagger UI docs at: http://127.0.0.1:8000/docs (for testing endpoints).
+---
 
-### Testing the API
-- With the server running, open another terminal and run the test script:
+## Setup & Installation
 
+### 1. Clone the repo
 
-- Expected Response: JSON with `"answers"` array.
+```sh
+git clone <https://github.com/Bhanu-partap-13/hackrx>
+cd hackrx_project_folder
+```
+
+### 2. Create and activate a virtual environment
+
+#### Windows PowerShell
+
+```sh
+python -m venv hackrx_env
+.\hackrx_env\Scripts\Activate.ps1
+```
+
+#### Linux/MacOS
+
+```sh
+python3 -m venv hackrx_env
+source hackrx_env/bin/activate
+```
+
+### 3. Install dependencies
+
+```sh
+pip install -r requirements.txt
+```
+
+**Key libraries installed:**
+
+- `fastapi`
+- `uvicorn[standard]`
+- `sentence-transformers`
+- `faiss-cpu`
+- `torch` (for embeddings, GPU optional)
+- `python-dotenv`
+- `requests`
+- `PyPDF2`
+- `nltk`
+- `groq`
+
+### 4. Download NLTK tokenizer models (Run once)
+
+In a python shell or script, run:
+
+```python
+import nltk
+nltk.download('punkt')
+```
+
+---
+
+## Environment Configuration
+
+Create a `.env` file in your project root directory with your Groq API key:
+
+```env
+GROQ_API_KEY=<your_groq_api_key_here>
+```
+
+Replace `<your_groq_api_key_here>` with your actual API key received from the HackRx Groq platform.
+
+---
+
+## Running Locally
+
+Start your FastAPI server using uvicorn:
+
+```sh
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2 --loop uvloop --reload
+```
+
+- `--workers` specifies parallel worker instances (choose based on CPU cores).
+- `--loop uvloop` for improved async performance (Linux/Mac recommended).
+
+Your API will be accessible at:
+`http://localhost:8000`
+
+---
+
+## Exposing Your API via Ngrok
+
+To make your local API publicly accessible (for HackRx evaluation or testing):
+
+1. Download and install [ngrok](https://ngrok.com/).
+2. Launch ngrok to forward your local port:
+
+```sh
+ngrok http 8000
+```
+
+3. Copy the **HTTP** URL generated (e.g., `http://abcd1234.ngrok.io`).
+
+> **Important:** Use HTTP URL during testing to avoid TLS `BAD_DECRYPT` errors. HTTPS tunnels may cause TLS handshake issues without proper cert setup.
+
+4. Update your test script or HackRx submission to point to this ngrok URL.
+
+---
+
+## Testing the API
+
+Use the provided `test_api.py` or tools like Postman with this sample POST request:
+
+- **Endpoint:**
+  `http://localhost:8000/api/v1/hackrx/run`
+
+- **Headers:**
+  Authorization: Bearer <YOUR_TOKEN_HERE>
+  Content-Type: application/json
+
+- **Body:**
+  ```json
+  {
+    "documents": "<URL_of_policy_pdf>",
+    "questions": [
+      "What is the grace period for premium payment?",
+      "Does the policy cover maternity expenses?"
+    ]
+  }
+  ```
+
+Replace `<URL_of_policy_pdf>` with your desired document URL.
+
+---
+
+## HackRx Submission Guidelines
+
+- Your API endpoint **must accept POST** at `/api/v1/hackrx/run` with JSON body containing `documents` (PDF URL) and `questions` (array of strings).
+- Use the exact **Bearer token** given in the code for authentication.
+- Return an array of answers corresponding to questions in the response.
+- Ensure your FastAPI server is always running and accessible (via ngrok or publicly hosted).
+- Follow API contract precisely for smooth HackRx evaluation.
+
+---
 
 ## Project Structure
-- `main.py`: Core FastAPI app with endpoint and service integrations.
-- `document_processor.py`: Handles PDF download, parsing, cleaning, and chunking.
-- `vector_store.py`: Manages embedding and FAISS-based vector search.
-- `groq_service.py`: Wraps Groq API calls for answer generation.
-- `test_api.py`: Script for local API testing with sample data.
-- `requirements.txt`: List of dependencies.
-- `.env.template`: Template for environment variables (copy to `.env`).
-- `.gitignore`: Excludes unnecessary files like venv and caches.
+
+```
+.
+├── main.py                # FastAPI entrypoint & API endpoint
+├── document_processor.py  # PDF download & text chunking
+├── vector_store.py        # Embeddings & FAISS search
+├── groq_service.py        # LLM answer generation via Groq
+├── test_api.py            # Sample testing script
+├── requirements.txt       # Python dependencies
+└── .env                   # Environment variables (api keys)
+
+```
+
+---
 
 ## Troubleshooting
-- **Common Errors**:
-- Connection refused: Ensure server is running before testing.
-- 401 Unauthorized: Verify Authorization header/token.
-- 500 Internal Error: Check Groq API key in `.env` or module imports.
-- **Dependencies Issues**: Run `pip install -r requirements.txt` again if modules are missing.
-- **Warnings**: Ignore FutureWarnings from libraries; they don't affect functionality.
 
-## Notes for Reviewers
-- The system is designed for accuracy, efficiency, and explainability per the problem statement.
-- Tested with the provided sample PDF and questions—answers align with policy details (e.g., 30-day grace period).
-- No real API keys included; use your own Groq key in `.env`.
-- For questions, contact [your email/team contact].
+- **Invalid Token:** Make sure the Authorization header token exactly matches the one in `main.py`.
+- **Slow Response Times:** Use in-memory caching and run with multiple uvicorn workers. Consider GPU acceleration.
+- **TLS Errors with ngrok:** Use the HTTP ngrok forwarding URL during testing.
+- **NLTK Errors:** Make sure `nltk` is installed and `'punkt'` tokenizer is downloaded.
+- **Timeouts:** Increase uvicorn worker counts or adjust timeouts as needed.
 
-Thank you for reviewing!
+---
+
+## References
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Uvicorn Server](https://www.uvicorn.org/)
+- [Ngrok Docs](https://ngrok.com/docs)
+- [Sentence Transformers](https://www.sbert.net/)
+- [FAISS Library](https://github.com/facebookresearch/faiss)
+- [Groq.ai API Docs](https://docs.groq.ai/)
+- [NLTK Tokenizer](https://www.nltk.org/api/nltk.tokenize.html)
+
+---
+
+## Github Family
+
+Feel free to raise issues or contribute improvements!
+Happy coding and good luck with HackRx 6.0 🎉

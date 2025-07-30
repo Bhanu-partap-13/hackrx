@@ -25,7 +25,14 @@ headers = {
     'Authorization': 'Bearer 80952cdfb4fc8cfff557b6cb27c4c39b9c980c039093b1ec6047ebedba90a9d7'
 }
 
-response = requests.post(url, json=payload, headers=headers)
-
-print("Status Code:", response.status_code)
-print("Response:", json.dumps(response.json(), indent=2))
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    print("Status Code:", response.status_code)
+    if response.status_code == 200:
+        print("Response:")
+        print(json.dumps(response.json(), indent=2))
+    else:
+        print("Error Response:")
+        print(response.text)
+except Exception as e:
+    print(f"Request failed: {e}")
