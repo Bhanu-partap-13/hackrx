@@ -48,7 +48,7 @@ Welcome to the **HackRx 6.0** AI-powered document retrieval system! This reposit
 ### 1. Clone the repo
 
 ```sh
-git clone <https://github.com/Bhanu-partap-13/hackrx>
+git clone https://github.com/Bhanu-partap-13/hackrx
 cd hackrx_project_folder
 ```
 
